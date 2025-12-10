@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gloterry Image Gallery</title>
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(rgba(0,0,0,0.75), rgba(0,0,0,0.75)),
+                  url('Gloterry.jpg') center center / cover no-repeat;
+      color: white;
+      text-align: center;
+      padding: 40px 20px;
+      min-height: 100vh;
+    }
+
+    @media (max-width: 600px) {
+      body {
+        padding: 20px 10px;
+        background-position: center center;
+        background-size: cover;
+        min-height: 100vh;
+      }
+    }
+
+    h1 {
+      font-size: 65px;
+      font-weight: 900;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      margin-bottom: 35px;
+      color: white;
+      font-family: 'Lucida Handwriting', cursive;
+    }
+
+    h1 span {
+      font-size: 28px;
+      font-family: 'Lucida Handwriting', cursive;
+      font-weight: 400;
+      letter-spacing: 1.5px;
+      display: block;
+      margin-top: -10px;
+      text-transform: lowercase;
+    }
+
+    @media (max-width: 600px) {
+      h1 {
+        font-size: 40px;
+      }
+      h1 span {
+        font-size: 18px;
+        margin-top: -6px;
+      }
+    }
+
+    .upload-label {
+      display: inline-block;
+      background: rgba(128, 0, 32, 0.85);
+      color: white;
+      padding: 12px 25px;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-bottom: 5px;
+      transition: background 0.3s ease;
+      font-weight: 600;
+      user-select: none;
+    }
+
+    .upload-label:hover {
+      background: rgba(128, 0, 32, 1);
+    }
+
+    #fileInput { 
+      display: none; 
+    }
+
+    #errorMsg {
+      color: #ff6666;
+      font-weight: bold;
+      margin-bottom: 20px;
+      height: 1.2em;
+      user-select: none;
+    }
+
+    .gallery {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 18px;
+      justify-items: center;
+    }
+
+    /* Removed 4-column override on mobile */
+
+    .gallery img {
+      width: 180px;
+      height: 180px;
+      object-fit: cover;
+      border-radius: 15px;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+      transition: transform 0.25s ease, box-shadow 0.25s ease;
+      outline: 2.5px solid white;
+      outline-offset: -4px;
+    }
+
+    .gallery img:hover {
+      transform: scale(1.06);
+      box-shadow: 0 8px 18px rgba(0,0,0,0.4);
+    }
+
+    .popup {
+      display: flex;
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.8);
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      transform: scale(0.8);
+      transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+
+    .popup.active {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+      transform: scale(1);
+    }
+
+    .popup img {
+      max-width: 90vw;
+      max-height: 90vh;
+      object-fit: contain;
+      border-radius: 10px;
+      box-shadow: 0 0 30px rgba(255, 255, 255, 0.2);
+    }
+
+    .close {
+      position: fixed;
+      top: 20px;
+      right: 30px;
+      font-size: 40px;
+      color: white;
+      cursor: pointer;
+      font-weight: bold;
+      user-select: none;
+    }
+  </style>
+</head>
+<body>
+  <h1>Gloterry'25<br><span>wedding picture galleries</span></h1>
+
+  <label for="fileInput" class="upload-label">Upload Images</label>
+  <input type="file" id="fileInput" accept="image/*" multiple />
+  
+  <div id="errorMsg"></div>
+
+  <div class="gallery" id="gallery"></div>
+
+  <div id="popup" class="popup">
+    <span class="close">&times;</span>
+    <img id="popupImg" src="" alt="Full Image" />
+  </div>
+
+  <script>
+    const fileInput = document.getElementById('fileInput');
+    const gallery = document.getElementById('gallery');
+    const popup = document.getElementById('popup');
+    const popupImg = document.getElementById('popupImg');
+    const closeBtn = document.querySelector('.close');
+    const errorMsg = document.getElementById('errorMsg');
+
+    const uploadedImages = new Set();
+
+    fileInput.addEventListener('change', function () {
+      const files = this.files;
+      if (files.length) {
+        Array.from(files).forEach(file => {
+          const reader = new FileReader();
+          reader.onload = function (e) {
+            const src = e.target.result;
+
+            if (uploadedImages.has(src)) {
+              showError("Already uploaded");
+              return;
+            }
+
+            uploadedImages.add(src);
+
+            const img = document.createElement('img');
+            img.src = src;
+            img.alt = file.name;
+            img.onclick = () => {
+              popupImg.src = src;
+              popup.classList.add('active');
+            };
+            gallery.appendChild(img);
+          };
+          reader.readAsDataURL(file);
+        });
+      }
+    });
+
+    function showError(message) {
+      errorMsg.textContent = message;
+      setTimeout(() => {
+        errorMsg.textContent = "";
+      }, 3000);
+    }
+
+    function closePopup() {
+      popup.classList.remove('active');
+      setTimeout(() => {
+        popupImg.src = "";
+      }, 300);
+    }
+
+    popup.addEventListener('click', (e) => {
+      if (e.target === popup || e.target === closeBtn) {
+        closePopup();
+      }
+    });
+  </script>
+</body>
+</html>
+
+
