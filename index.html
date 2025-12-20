@@ -1,69 +1,98 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Gloterry Image Gallery</title>
-  <style>
-    html, body {
-      height: 100%;
-      margin: 0;
-      padding: 0;
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Cloudinary Upload & Display</title>
+<style>
+  body { font-family: Arial, sans-serif; max-width: 480px; margin: 40px auto; text-align: center; padding: 0 20px; }
+  input[type="file"] { margin: 20px 0; }
+  button { padding: 10px 20px; font-weight: bold; cursor: pointer; background-color: #323232; color: white; border: none; border-radius: 5px; }
+  button:disabled { background-color: #888; cursor: not-allowed; }
+  img { margin-top: 20px; max-width: 100%; border-radius: 8px; box-shadow: 0 0 15px #ccc; border: 1px solid #ddd; }
+  #message { margin-top: 15px; font-weight: 600; color: green; }
+  #gallery img { max-width: 120px; margin: 5px; border-radius: 8px; }
+</style>
+</head>
+<body>
+  <h2>Upload Image to Cloudinary & View</h2>
+  <input type="file" id="fileInput" accept="image/*" />
+  <br />
+  <button id="uploadBtn" disabled>Upload Image</button>
+  <div id="message"></div>
+  <img id="preview" src="" alt="Uploaded Image Preview" />
+  <h3>Uploaded Images Gallery</h3>
+  <div id="gallery"></div>
+
+  <script>
+    const cloudName = "YOUR_CLOUD_NAME"; // Replace with your Cloudinary cloud name
+    const unsignedUploadPreset = "YOUR_UNSIGNED_PRESET"; // Replace with your unsigned upload preset
+
+    const fileInput = document.getElementById('fileInput');
+    const uploadBtn = document.getElementById('uploadBtn');
+    const message = document.getElementById('message');
+    const preview = document.getElementById('preview');
+    const galleryDiv = document.getElementById('gallery');
+
+    // Enable upload button only if file selected
+    fileInput.addEventListener('change', () => {
+      uploadBtn.disabled = !fileInput.files.length;
+      message.textContent = '';
+      preview.src = '';
+    });
+
+    uploadBtn.addEventListener('click', () => {
+      const file = fileInput.files[0];
+      if (!file) return;
+
+      uploadBtn.disabled = true;
+      message.style.color = 'black';
+      message.textContent = 'Uploading...';
+
+      const url = `https://api.cloudinary.com/v1_1/${cloudName}/upload`;
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('upload_preset', unsignedUploadPreset);
+
+      fetch(url, {
+        method: 'POST',
+        body: formData
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.secure_url) {
+          preview.src = data.secure_url;
+          message.style.color = 'green';
+          message.textContent = 'Upload complete!';
+
+          // Save URL in localStorage gallery
+          let gallery = JSON.parse(localStorage.getItem('uploadedImages') || '[]');
+          gallery.push(data.secure_url);
+          localStorage.setItem('uploadedImages', JSON.stringify(gallery));
+          displayGallery();
+        } else {
+          throw new Error('Upload failed');
+        }
+      })
+      .catch(err => {
+        message.style.color = 'red';
+        message.textContent = 'Upload error: ' + err.message;
+      })
+      .finally(() => {
+        uploadBtn.disabled = false;
+      });
+    });
+
+    function displayGallery() {
+      const gallery = JSON.parse(localStorage.getItem('uploadedImages') || '[]');
+      galleryDiv.innerHTML = gallery.map(url => `<img src="${url}" alt="Uploaded Image"/>`).join('');
     }
 
-    body {
-      font-family: 'Poppins', sans-serif;
-      background: linear-gradient(rgba(0,0,0,0.75), rgba(0,0,0,0.75)),
-                  url('Gloterry.jpg') center center / cover no-repeat;
-      color: white;
-      text-align: center;
-      padding: 40px 20px;
-      min-height: 100vh;
-    }
-
-    @media (max-width: 600px) {
-      body {
-        padding: 20px 10px;
-        background-position: center center;
-        background-size: cover;
-        min-height: 100vh;
-      }
-    }
-
-    h1 {
-      font-size: 65px;
-      font-weight: 900;
-      letter-spacing: 4px;
-      text-transform: uppercase;
-      margin-bottom: 35px;
-      color: white;
-      font-family: 'Lucida Handwriting', cursive;
-    }
-
-    h1 span {
-      font-size: 28px;
-      font-family: 'Lucida Handwriting', cursive;
-      font-weight: 400;
-      letter-spacing: 1.5px;
-      display: block;
-      margin-top: -10px;
-      text-transform: lowercase;
-    }
-
-    @media (max-width: 600px) {
-      h1 {
-        font-size: 40px;
-      }
-      h1 span {
-        font-size: 18px;
-        margin-top: -6px;
-      }
-    }
-
-    .upload-label {
-      display: inline-block;
-      background: rgba(128, 0, 32, 0.85);
-      color: white;
+    // Load gallery on page load
+    displayGallery();
+  </script>
+</body>
+</html>      color: white;
       padding: 12px 25px;
       border-radius: 8px;
       cursor: pointer;
@@ -236,5 +265,6 @@
   </script>
 </body>
 </html>
+
 
 
